@@ -32,7 +32,7 @@ def main() -> None:
     )
 
     groq_api_key = os.environ.get("GROQ_API_KEY")
-    pdf_path = os.environ.get("HYBRID_RAG_PDF")
+    pdf_path = os.environ.get("HYBRID_RAG_PDF", "Stryker Corporation.pdf")
 
     rag = HybridRAG(config=config, groq_api_key=groq_api_key)
 
