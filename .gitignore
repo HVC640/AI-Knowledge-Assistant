@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# BM25
+bm25_index/
+
+# Qdrant
+qdrant_storage/
