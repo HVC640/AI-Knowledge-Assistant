@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DocMind Qdrant Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f3f4f6; color: #111827; }
+    .page { max-width: 900px; margin: 0 auto; padding: 24px; }
+    .card { background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08); padding: 24px; margin-bottom: 20px; }
+    h1, h2 { margin-top: 0; }
+    label { font-weight: bold; display: block; margin-bottom: 8px; }
+    input[type="text"], textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; margin-bottom: 12px; }
+    button { background: #2563eb; color: white; border: none; border-radius: 8px; padding: 12px 18px; cursor: pointer; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .result { border: 1px solid #e5e7eb; padding: 16px; border-radius: 10px; margin-bottom: 14px; }
+    .meta { font-size: 0.9rem; color: #4b5563; margin-bottom: 8px; }
+    .message { margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <h1>DocMind Qdrant Demo</h1>
+      <p>Upload a document to index it in Qdrant, then ask questions over the indexed chunks.</p>
+    </div>
+
+    <div class="card">
+      <h2>Upload Document</h2>
+      <form id="upload-form">
+        <label for="file-upload">Choose file</label>
+        <input type="file" id="file-upload" accept=".pdf,.txt,.md,.docx" />
+        <button type="submit">Upload and Index</button>
+      </form>
+      <div id="upload-status" class="message"></div>
+    </div>
+
+    <div class="card">
+      <h2>Ask a Question</h2>
+      <form id="query-form">
+        <label for="query-input">Question</label>
+        <input type="text" id="query-input" placeholder="Enter your question here" />
+        <button type="submit">Search</button>
+      </form>
+      <div id="query-status" class="message"></div>
+    </div>
+
+    <div class="card">
+      <h2>Retrieved Results</h2>
+      <div id="results"></div>
+    </div>
+  </div>
+
+  <script>
+    const uploadForm = document.getElementById('upload-form');
+    const queryForm = document.getElementById('query-form');
+    const uploadStatus = document.getElementById('upload-status');
+    const queryStatus = document.getElementById('query-status');
+    const resultsContainer = document.getElementById('results');
+
+    uploadForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const fileInput = document.getElementById('file-upload');
+      const file = fileInput.files[0];
+      if (!file) {
+        uploadStatus.textContent = 'Please choose a file before uploading.';
+        return;
+      }
+
+      uploadStatus.textContent = 'Uploading...';
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          uploadStatus.textContent = `Upload failed: ${data.detail || data.error || 'Unknown error'}`;
+          return;
+        }
+        uploadStatus.textContent = `Uploaded ${data.file_name} and indexed ${data.chunks} chunks.`;
+      } catch (error) {
+        uploadStatus.textContent = `Upload failed: ${error.message}`;
+      }
+    });
+
+    queryForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const input = document.getElementById('query-input');
+      const question = input.value.trim();
+      if (!question) {
+        queryStatus.textContent = 'Please enter a question.';
+        return;
+      }
+
+      queryStatus.textContent = 'Searching...';
+      resultsContainer.innerHTML = '';
+
+      try {
+        const response = await fetch('/api/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          queryStatus.textContent = `Search failed: ${data.detail || data.error || 'Unknown error'}`;
+          return;
+        }
+
+        queryStatus.textContent = `Found ${data.results.length} results for: ${data.query}`;
+        if (data.results.length === 0) {
+          resultsContainer.innerHTML = '<p>No matches found yet. Upload a document and try again.</p>';
+          return;
+        }
+
+        resultsContainer.innerHTML = data.results.map(result => `
+          <div class="result">
+            <div class="meta">Score: ${result.score?.toFixed(4) || 'N/A'} | Source: ${result.source_path} | Page: ${result.page_num}</div>
+            <div>${result.text}</div>
+          </div>
+        `).join('');
+      } catch (error) {
+        queryStatus.textContent = `Search failed: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+</html>

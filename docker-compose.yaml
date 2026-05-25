@@ -8,3 +8,11 @@ services:
     volumes:
       - ./qdrant_storage:/qdrant/storage
     restart: always
+  
+  docmind:
+    build:
+      context: ./docmind
+    depends_on:
+      - qdrant
+    ports:
+      - "8000:8000"

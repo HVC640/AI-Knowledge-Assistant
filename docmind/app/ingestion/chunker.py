@@ -1,8 +1,9 @@
 import logging
 import re
 from typing import List, Tuple
+import uuid
 
-from .models import Chunk
+from shared.schemas.models import Chunk
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +15,14 @@ class Chunker:
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
 
-    def chunk_pages(self, pages: List[Tuple[int, str]], source: str) -> List[Chunk]:
+    def chunk_pages(
+        self,
+        pages: List[Tuple[int, str]],
+        source_path: str,
+        start_id: int = 0,
+    ) -> List[Chunk]:
         chunks: List[Chunk] = []
-        chunk_id = 0
+        chunk_id = start_id
 
         for page_number, text in pages:
             cleaned = self._clean_text(text)
@@ -33,11 +39,17 @@ class Chunker:
 
                 chunks.append(
                     Chunk(
-                        id=chunk_id,
+                        id=uuid.uuid4().hex,
+                        chunk_id=f"{source_path}:{page_number}:{chunk_id}",
                         text=" ".join(chunk_words),
-                        source=source,
-                        page=page_number,
+                        source_path=source_path,
+                        page_num=page_number,
                         chunk_index=start,
+                        metadata={
+                            "word_count": len(chunk_words),
+                            "source": source_path,
+                            "page": page_number,
+                        },
                     )
                 )
                 chunk_id += 1
@@ -47,7 +59,7 @@ class Chunker:
 
     @staticmethod
     def _clean_text(text: str) -> str:
+        text = re.sub(r"-\n", "", text)
         text = re.sub(r"\n{3,}", "\n\n", text)
         text = re.sub(r"[ \t]+", " ", text)
-        text = re.sub(r"-\n", "", text)
         return text.strip()
