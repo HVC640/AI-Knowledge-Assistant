@@ -18,7 +18,7 @@ class LLMClient:
     def __init__(
         self,
         api_key: str,
-        model: str = "llama3-8b-8192",
+        model: str = "openai/gpt-oss-120b",
         temperature: float = 0.2,
         max_tokens: int = 1024,
     ):

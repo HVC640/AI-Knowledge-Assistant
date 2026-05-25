@@ -2,6 +2,7 @@ from docmind.app.ingestion.parser import Parser
 from docmind.app.ingestion.chunker import Chunker
 from docmind.app.vectorstore.qdrant_client import QdrantVectorStore
 from docmind.app.retrieval.reranker import Reranker
+from docmind.app.llm.groq_client import GroqClient
 
 if __name__ == "__main__":
     # source_path = "C:/Workspace/projects/AI-Knowledge-Assistant/docs/Stryker Corporation.pdf"
@@ -18,15 +19,19 @@ if __name__ == "__main__":
     reranker = Reranker()
     results = reranker.rerank(query, results)
 
-    print(f"Top {len(results)} results for query: '{query}'")
-    for idx, result in enumerate(results):
-        print(f"\nResult {idx + 1}:")
-        print(f"ID: {result.id}")
-        print(f"Chunk ID: {result.chunk_id}")
-        print(f"Score: {result.score}")
-        print(f"Rerank Score: {result.rerank_score}")
-        print(f"Text: {result.text}")
-        print(f"Metadata: {result.metadata}")
+    groq_client = GroqClient()
+    answer = groq_client.answer(query, results)
+    print(f"\nAnswer:\n{answer}\n")
+
+    # print(f"Top {len(results)} results for query: '{query}'")
+    # for idx, result in enumerate(results):
+    #     print(f"\nResult {idx + 1}:")
+    #     print(f"ID: {result.id}")
+    #     print(f"Chunk ID: {result.chunk_id}")
+    #     print(f"Score: {result.score}")
+    #     print(f"Rerank Score: {result.rerank_score}")
+    #     print(f"Text: {result.text}")
+    #     print(f"Metadata: {result.metadata}")
 
 
 

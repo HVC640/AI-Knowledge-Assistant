@@ -46,7 +46,12 @@
     </div>
 
     <div class="card">
-      <h2>Retrieved Results</h2>
+      <h2>Answer</h2>
+      <div id="answer" class="result">Ask a question to see the generated answer here.</div>
+    </div>
+
+    <div class="card">
+      <h2>Retrieved Context</h2>
       <div id="results"></div>
     </div>
   </div>
@@ -56,6 +61,7 @@
     const queryForm = document.getElementById('query-form');
     const uploadStatus = document.getElementById('upload-status');
     const queryStatus = document.getElementById('query-status');
+    const answerContainer = document.getElementById('answer');
     const resultsContainer = document.getElementById('results');
 
     uploadForm.addEventListener('submit', async (event) => {
@@ -97,6 +103,7 @@
       }
 
       queryStatus.textContent = 'Searching...';
+      answerContainer.textContent = 'Waiting for answer...';
       resultsContainer.innerHTML = '';
 
       try {
@@ -108,23 +115,28 @@
         const data = await response.json();
         if (!response.ok) {
           queryStatus.textContent = `Search failed: ${data.detail || data.error || 'Unknown error'}`;
+          answerContainer.textContent = 'No answer available.';
           return;
         }
 
-        queryStatus.textContent = `Found ${data.results.length} results for: ${data.query}`;
+        queryStatus.textContent = `Found ${data.results.length} context items for: ${data.query}`;
+        answerContainer.innerHTML = data.answer ? data.answer : 'No answer returned from the backend.';
+
         if (data.results.length === 0) {
-          resultsContainer.innerHTML = '<p>No matches found yet. Upload a document and try again.</p>';
+          resultsContainer.innerHTML = '<p>No retrieved context found. Upload a document and try again.</p>';
           return;
         }
 
-        resultsContainer.innerHTML = data.results.map(result => `
-          <div class="result">
-            <div class="meta">Score: ${result.score?.toFixed(4) || 'N/A'} | Source: ${result.source_path} | Page: ${result.page_num}</div>
+        resultsContainer.innerHTML = data.results.map((result, index) => `
+          <details class="result">
+            <summary><strong>Context ${index + 1}</strong> — Score: ${result.score?.toFixed(4) || 'N/A'} | Source: ${result.source_path} | Page: ${result.page_num}</summary>
+            <div class="meta">Chunk ID: ${result.chunk_id}</div>
             <div>${result.text}</div>
-          </div>
+          </details>
         `).join('');
       } catch (error) {
         queryStatus.textContent = `Search failed: ${error.message}`;
+        answerContainer.textContent = 'No answer available.';
       }
     });
   </script>

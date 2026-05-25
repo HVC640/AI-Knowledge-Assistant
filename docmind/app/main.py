@@ -20,3 +20,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 async def home():
     index_file = STATIC_DIR / "index.html"
     return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
