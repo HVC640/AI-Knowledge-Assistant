@@ -3,8 +3,7 @@ from typing import List, Optional
 
 from sentence_transformers import CrossEncoder
 
-from shared.schemas.models import Chunk
-from docmind.app.core.config import settings
+from .models import RetrievedChunk
 
 logger = logging.getLogger(__name__)
 
@@ -12,25 +11,21 @@ logger = logging.getLogger(__name__)
 class Reranker:
     """Cross-encoder re-ranker for final candidate scoring."""
 
-    def __init__(self, model: str = settings.RERANKER_MODEL_NAME):
+    def __init__(self, model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"):
         logger.info(f"Loading re-ranker: {model}")
-        self.model = CrossEncoder(model, max_length=settings.RERANKER_MAX_LENGTH)
+        self.model = CrossEncoder(model, max_length=512)
 
     def rerank(
         self,
         query: str,
-        candidates: List[Chunk],
-        top_k: int = settings.RERANKER_TOP_K,
-        threshold: Optional[float] = settings.RERANKER_THRESHOLD,
-    ) -> List[Chunk]:
-        logger.debug(
-            f"Reranking {len(candidates)} candidates"
-        )
-
+        candidates: List[RetrievedChunk],
+        top_k: int = 5,
+        threshold: Optional[float] = None,
+    ) -> List[RetrievedChunk]:
         if not candidates:
             return []
-        
-        pairs = [(query, candidate.text) for candidate in candidates]
+
+        pairs = [(query, candidate.chunk.text) for candidate in candidates]
         scores = self.model.predict(pairs)
 
         for candidate, score in zip(candidates, scores):

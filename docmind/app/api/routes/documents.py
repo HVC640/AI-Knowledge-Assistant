@@ -1,5 +1,6 @@
 from pathlib import Path
 import shutil
+import uuid
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
@@ -20,9 +21,12 @@ vector_store = QdrantVectorStore()
 @router.post("/upload")
 async def upload_document(file: UploadFile = File(...)):
     if not file.filename:
-        raise HTTPException(status_code=400, detail="File must have a filename")
+        raise HTTPException(status_code=400, detail="File must have a filename")    
 
-    target_path = UPLOAD_DIR / file.filename
+    target_path = (
+        UPLOAD_DIR /
+        f"{uuid.uuid4()}_{file.filename}"
+    )
     try:
         with target_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)

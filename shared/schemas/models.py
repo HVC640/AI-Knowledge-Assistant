@@ -13,7 +13,9 @@ class Chunk:
     char_start: Optional[int] = None
     char_end: Optional[int] = None
     metadata: dict = field(default_factory=dict)
+    
     score: Optional[float] = None
+    rerank_score: Optional[float] = None
 
     def to_payload(self) -> dict:
         payload = {
