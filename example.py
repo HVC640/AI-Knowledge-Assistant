@@ -13,6 +13,7 @@ if __name__ == "__main__":
 
     vector_store = QdrantVectorStore()
     # vector_store.upsert_chunks(chunks)
+
     query = "What are the CONDITIONS PRECEDENT TO CREDIT EXTENSIONS ?"
     results = vector_store.search(query)
     
@@ -23,16 +24,13 @@ if __name__ == "__main__":
     answer = groq_client.answer(query, results)
     print(f"\nAnswer:\n{answer}\n")
 
-    # print(f"Top {len(results)} results for query: '{query}'")
-    # for idx, result in enumerate(results):
-    #     print(f"\nResult {idx + 1}:")
-    #     print(f"ID: {result.id}")
-    #     print(f"Chunk ID: {result.chunk_id}")
-    #     print(f"Score: {result.score}")
-    #     print(f"Rerank Score: {result.rerank_score}")
-    #     print(f"Text: {result.text}")
-    #     print(f"Metadata: {result.metadata}")
-
-
-
+    print(f"Top {len(results)} results for query: '{query}'")
+    for idx, result in enumerate(results):
+        print(f"\nResult {idx + 1}:")
+        print(f"ID: {result.id}")
+        print(f"Chunk ID: {result.chunk_id}")
+        print(f"Score: {result.score}")
+        print(f"Rerank Score: {result.rerank_score}")
+        print(f"Text: {result.text}")
+        print(f"Metadata: {result.metadata}")
 

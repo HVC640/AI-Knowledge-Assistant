@@ -11,6 +11,8 @@ class Settings(BaseSettings):
 
     EMBEDDING_MODEL_NAME: str = "all-MiniLM-L6-v2"
     EMBED_CHUNK_SIZE: int = 32
+
+    SPARSE_EMBEDDING_MODEL_NAME: str = "Qdrant/bm25"
     
     RERANKER_MODEL_NAME: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     RERANKER_MAX_LENGTH: int = 512
@@ -22,6 +24,8 @@ class Settings(BaseSettings):
 
 
     COLLECTION_NAME: str = "documents"
+    DENSE_FIELD_NAME: str = "dense_embedding"
+    SPARSE_FIELD_NAME: str = "sparse_embedding"
     TOP_K: int = 10
     RERANKER_TOP_K: int = 3
     RERANKER_THRESHOLD: Optional[float] = None
