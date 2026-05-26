@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     GROQ_MODEL_NAME: str = "openai/gpt-oss-120b"
     GROQ_TEMPERATURE: float = 0.2
     GROQ_MAX_TOKENS: int = 1024
+    GROQ_MULTI_QUERY_TEMPERATURE: float = 0.2
+    GROQ_MULTI_QUERY_MAX_TOKENS: int = 120
 
 
     COLLECTION_NAME: str = "documents"

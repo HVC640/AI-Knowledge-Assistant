@@ -19,17 +19,34 @@ class GroqClient:
         "'I could not find that in the document.'"
     )
 
+    MULTI_QUERY_PROMPT = """
+        Generate 3 alternate search queries for the user's question.
+
+        Rules:
+        - Keep meaning same
+        - Use different wording
+        - Return one query per line
+        - No numbering
+
+        Question:
+        {query}
+    """
+
     def __init__(
         self,
         api_key: str = settings.GROQ_API_KEY,
         model: str = settings.GROQ_MODEL_NAME,
         temperature: float = settings.GROQ_TEMPERATURE,
         max_tokens: int = settings.GROQ_MAX_TOKENS,
+        multi_query_temperature: float = settings.GROQ_MULTI_QUERY_TEMPERATURE,
+        multi_query_max_tokens: int = settings.GROQ_MULTI_QUERY_MAX_TOKENS,
     ):
         self.client = Groq(api_key=api_key)
         self.model = model
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.multi_query_temperature = multi_query_temperature
+        self.multi_query_max_tokens = multi_query_max_tokens
 
     def answer(self, query: str, chunks: List[Chunk]) -> str:
         prompt = self._build_prompt(query, chunks)
@@ -49,6 +66,38 @@ class GroqClient:
             return "I could not find that in the document."
 
         return message.content.strip()
+
+    def generate_queries(
+        self,
+        query: str
+    ) -> List[str]:
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": self.MULTI_QUERY_PROMPT.format(query=query),
+                }
+            ],
+            temperature=self.multi_query_temperature,
+            max_tokens=self.max_tokens,
+        )
+
+        content = response.choices[0].message.content or ""
+
+        queries = [
+            line.strip()
+            for line in content.splitlines()
+            if line.strip()
+        ]
+
+        unique_queries = []
+
+        for item in [query] + queries:
+            if item not in unique_queries:
+                unique_queries.append(item)
+
+        return unique_queries[:4]
 
     @staticmethod
     def _build_prompt(query: str, chunks: List[Chunk]) -> str:

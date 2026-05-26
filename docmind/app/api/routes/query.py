@@ -4,10 +4,12 @@ from pydantic import BaseModel
 from docmind.app.vectorstore.qdrant_client import QdrantVectorStore
 from docmind.app.retrieval.reranker import Reranker
 from docmind.app.llm.groq_client import GroqClient
+from docmind.app.retrieval.utils import dedupe_chunks
 
 router = APIRouter(prefix="/api", tags=["query"])
 vector_store = QdrantVectorStore()
-
+groq_client = GroqClient()
+reranker = Reranker()
 
 class QueryRequest(BaseModel):
     question: str
@@ -18,12 +20,16 @@ def query_document(request: QueryRequest):
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 
-    results = vector_store.search(request.question)
+    queries = groq_client.generate_queries(request.question)
 
-    reranker = Reranker()
-    results = reranker.rerank(request.question, results)
+    all_results = []
+    for q in queries:
+        results = vector_store.search(q)
+        all_results.extend(results)
 
-    groq_client = GroqClient()
+    # dedupe results based on chunk_id and source_path
+    unique_results = dedupe_chunks(all_results)
+    results = reranker.rerank(request.question, unique_results)
     answer = groq_client.answer(request.question, results)
 
     return {

@@ -1,30 +1,41 @@
 from docmind.app.ingestion.parser import Parser
 from docmind.app.ingestion.chunker import Chunker
+from docmind.app.retrieval.utils import dedupe_chunks
 from docmind.app.vectorstore.qdrant_client import QdrantVectorStore
 from docmind.app.retrieval.reranker import Reranker
 from docmind.app.llm.groq_client import GroqClient
 
 if __name__ == "__main__":
     # source_path = "C:/Workspace/projects/AI-Knowledge-Assistant/docs/Stryker Corporation.pdf"
+    query = "What are the CONDITIONS PRECEDENT TO CREDIT EXTENSIONS ?"
+    groq_client = GroqClient()
+    vector_store = QdrantVectorStore()
+    
     # pages = Parser(source_path).parse()
     # chunker = Chunker()
     # chunks = chunker.chunk_pages(pages, source_path)
     # print(f"Total chunks created: {len(chunks)}")
-
-    vector_store = QdrantVectorStore()
     # vector_store.upsert_chunks(chunks)
 
-    query = "What are the CONDITIONS PRECEDENT TO CREDIT EXTENSIONS ?"
-    results = vector_store.search(query)
+    queries = groq_client.generate_queries(query)
+    print(f"\nGenerated queries: {queries}\n")
+
+    all_results = []
+    for q in queries:
+        results = vector_store.search(q)
+        all_results.extend(results)
+
+    # dedupe results based on chunk_id and source_path
+    unique_results = dedupe_chunks(all_results)
+    print(f"\nTotal unique chunks retrieved: {len(unique_results)}\n")
     
     reranker = Reranker()
-    results = reranker.rerank(query, results)
+    results = reranker.rerank(query, unique_results)
 
-    groq_client = GroqClient()
     answer = groq_client.answer(query, results)
     print(f"\nAnswer:\n{answer}\n")
 
-    print(f"Top {len(results)} results for query: '{query}'")
+    print(f"\nTop {len(results)} results for query: '{query}'")
     for idx, result in enumerate(results):
         print(f"\nResult {idx + 1}:")
         print(f"ID: {result.id}")
