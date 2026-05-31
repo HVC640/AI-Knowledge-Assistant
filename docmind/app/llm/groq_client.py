@@ -12,12 +12,12 @@ logger = logging.getLogger(__name__)
 class GroqClient:
     """Wraps Groq chat completions for grounded answer generation."""
 
-    SYSTEM_PROMPT = (
-        "You are a document assistant. "
-        "Answer only from provided context. "
-        "If answer is not found say "
-        "'I could not find that in the document.'"
-    )
+    SYSTEM_PROMPT = """
+        You are a document assistant.
+        Answer only from provided context.
+        If answer is not found say
+        'I could not find that in the document.'
+    """
 
     MULTI_QUERY_PROMPT = """
         Generate 3 alternate search queries for the user's question.
@@ -27,6 +27,20 @@ class GroqClient:
         - Use different wording
         - Return one query per line
         - No numbering
+
+        Question:
+        {query}
+    """
+
+    HYDE_PROMPT = """
+        Write a short factual answer that might appear
+        inside a document for the user's question.
+
+        Rules:
+        - 2 to 4 sentences
+        - factual
+        - concise
+        - no explanation outside answer
 
         Question:
         {query}
@@ -98,6 +112,37 @@ class GroqClient:
                 unique_queries.append(item)
 
         return unique_queries[:4]
+
+    def generate_hypothetical_answer(
+        self,
+        query: str,
+    ) -> str:
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": self.HYDE_PROMPT.format(
+                        query=query
+                    ),
+                }
+            ],
+            temperature=0.3,
+            max_tokens=200,
+        )
+
+        content = (
+            response.choices[0]
+            .message
+            .content
+            or ""
+        ).strip()
+
+        logger.info(
+            f"HyDE answer: {content[:120]}"
+        )
+
+        return content
 
     @staticmethod
     def _build_prompt(query: str, chunks: List[Chunk]) -> str:

@@ -20,12 +20,23 @@ def query_document(request: QueryRequest):
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 
+    # Multi-query
     queries = groq_client.generate_queries(request.question)
-
     all_results = []
     for q in queries:
         results = vector_store.search(q)
         all_results.extend(results)
+
+    # HyDE
+    hypothetical_answer = groq_client.generate_hypothetical_answer(
+        request.question
+    )
+    hyde_results = vector_store.search(
+        hypothetical_answer
+    )
+    all_results.extend(
+        hyde_results
+    )
 
     # dedupe results based on chunk_id and source_path
     unique_results = dedupe_chunks(all_results)

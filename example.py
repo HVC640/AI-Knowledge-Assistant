@@ -17,13 +17,25 @@ if __name__ == "__main__":
     # print(f"Total chunks created: {len(chunks)}")
     # vector_store.upsert_chunks(chunks)
 
+    # Multi-query
     queries = groq_client.generate_queries(query)
     print(f"\nGenerated queries: {queries}\n")
-
     all_results = []
     for q in queries:
         results = vector_store.search(q)
         all_results.extend(results)
+
+    # HyDE
+    hypothetical_answer = groq_client.generate_hypothetical_answer(
+        query
+    )
+    print(f"\nHypothetical answer: {hypothetical_answer}\n")
+    hyde_results = vector_store.search(
+        hypothetical_answer
+    )
+    all_results.extend(
+        hyde_results
+    )
 
     # dedupe results based on chunk_id and source_path
     unique_results = dedupe_chunks(all_results)
